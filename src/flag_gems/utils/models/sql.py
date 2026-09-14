@@ -46,7 +46,15 @@ class SQLPersistantModel(PersistantModel):
 
     def __init__(self, db_url: str, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
-        self.engine: Final[sqlalchemy.engine.Engine] = sqlalchemy.create_engine(db_url)
+        # sqlite: 8 TP workers share one tuning-cache DB file; the default
+        # 5s busy timeout aborts workers with "database is locked" when they
+        # all tune a new shape at once. Wait longer instead of dying.
+        engine_kwargs = {}
+        if db_url.startswith("sqlite"):
+            engine_kwargs["connect_args"] = {"timeout": 120}
+        self.engine: Final[sqlalchemy.engine.Engine] = sqlalchemy.create_engine(
+            db_url, **engine_kwargs
+        )
         self.sql_model_pool: Dict[str, Type[Base]] = {}
 
     @staticmethod

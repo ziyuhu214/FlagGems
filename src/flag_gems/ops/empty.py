@@ -86,6 +86,12 @@ def empty(
     # anyway so skipping the store is functionally safe for all backends.
     if dtype.is_complex:
         return out
+    # NOTE: removing this zero-store looks like an easy win (~6% of decode GPU
+    # time at ~3000 calls/step on DeepSeek-V4/PPU) but is NOT safe: parts of
+    # the stack allocate state buffers via empty() and silently rely on this
+    # kernel's zero-fill (observed: DeepSeek-V4 compressor state cache IMAs
+    # with true-uninitialized memory). Any future removal must first audit
+    # all empty() consumers for zero-init assumptions.
     N = volume(shape)
     grid_fn = lambda meta: (triton.cdiv(N, meta["BLOCK_SIZE"]),)
     with torch_device_fn.device(device):

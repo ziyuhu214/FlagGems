@@ -419,7 +419,10 @@ _FULL_CONFIG = (
     ("embedding", embedding),
     ("embedding_backward", embedding_backward),
     ("embedding_dense_backward", embedding_dense_backward),
-    ("empty.memory_format", empty),
+    # ("empty.memory_format", empty),  # upstream PR #5438: do not take
+    # over aten::empty. vllm-plugin-FL installs a light int-dtype-only
+    # zero-fill instead (vllm_fl/ops/empty_int_zero.py) because parts of
+    # the DeepSeek-V4 path rely on zeroed integer index buffers.
     ("eq.Scalar", eq_scalar),
     ("eq.Tensor", eq),
     ("eq_.Scalar", eq_scalar_),
